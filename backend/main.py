@@ -1,30 +1,32 @@
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from sqlalchemy import text
+from typing import AsyncGenerator
 
-from backend.database import engine
+from fastapi import FastAPI
+
+from backend.database import Base, engine
+from backend.routers import events, inventory, tiers, venues
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    # 🔹 Startup logic
-    print("Starting up...")
-
-    # (Optional) test DB connection
-    async with engine.connect() as conn:
-        await conn.execute(text("SELECT 1"))
+async def lifespan(app: FastAPI) -> AsyncGenerator:
+    # Create all tables on startup (swap for Alembic in production)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield
-
-    # 🔹 Shutdown logic
-    print("Shutting down...")
 
 
 app = FastAPI(
-    title="Flash Sale API",
-    lifespan=lifespan
+    title="Ticketing API",
+    version="0.1.0",
+    lifespan=lifespan,
 )
 
+app.include_router(venues.router)
+app.include_router(events.router)
+app.include_router(tiers.router)
+app.include_router(inventory.router)
 
-@app.get("/")
-async def root():
-    return {"message": "API running 🚀"}
+
+@app.get("/health", tags=["Meta"])
+async def health() -> dict:
+    return {"status": "ok"}
