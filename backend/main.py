@@ -6,25 +6,16 @@ from fastapi import FastAPI
 
 from backend.database import Base, engine
 from backend.routers import events, inventory, tiers, venues, purchase
-from backend.tasks import expired_locks
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
+    # 1. Startup: Initialize database tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
  
-    # Sweep expired locks back to AVAILABLE every 60 s.
-    # Replace with APScheduler / Celery beat in production.
-    async def _reaper() -> None:
-        while True:
-            await asyncio.sleep(60)
-            await expired_locks.reap_expired_locks()
- 
-    task = asyncio.create_task(_reaper())
-    yield
-    task.cancel()
-
+    yield 
+    
+    # 2. Shutdown: Add any necessary cleanup here later (e.g., engine.dispose())
 
 app = FastAPI(
     title="Ticketing API",
