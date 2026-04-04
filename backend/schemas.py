@@ -87,3 +87,39 @@ class GenerateInventoryResponse(BaseModel):
     tiers_processed: int
     total_tickets_created: int
     breakdown: list[TierInventorySummary]
+
+# ── Lock ──────────────────────────────────────────────────────────────────────
+ 
+class LockRequest(BaseModel):
+    tier_id: uuid.UUID
+    user_id: uuid.UUID                        # replace with JWT sub in prod
+ 
+ 
+class LockResponse(_Base):
+    ticket_id: uuid.UUID
+    tier_id: uuid.UUID
+    status: str
+    locked_until: datetime
+ 
+ 
+# ── Order / purchase ──────────────────────────────────────────────────────────
+ 
+class OrderCreate(BaseModel):
+    user_id: uuid.UUID                        # replace with JWT sub in prod
+    ticket_ids: list[uuid.UUID] = Field(..., min_length=1)
+ 
+ 
+class OrderItemRead(_Base):
+    item_id: uuid.UUID
+    ticket_id: uuid.UUID
+    price_paid: Decimal
+ 
+ 
+class OrderRead(_Base):
+    order_id: uuid.UUID
+    user_id: uuid.UUID
+    status: str
+    total_amount: Decimal
+    created_at: datetime
+    items: list[OrderItemRead]
+ 

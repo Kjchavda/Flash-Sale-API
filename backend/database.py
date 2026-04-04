@@ -14,7 +14,11 @@ if DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 # 2. Create Async Engine
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=True,
+    pool_pre_ping=True,   # 🔥 fixes stale connections
+)
 
 # 3. Use async_sessionmaker
 AsyncSessionLocal = async_sessionmaker(
