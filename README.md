@@ -154,7 +154,7 @@ uvicorn backend.main:app --reload
 ---
 
 # Database Schema
-![ER Diagram](assets/flash-sale-api.png)
+![ER Diagram](assets/flash-sale-api.svg)
 
 # 🔥 Core Features
 
