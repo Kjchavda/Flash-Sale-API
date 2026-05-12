@@ -67,13 +67,13 @@ To demonstrate the engine's capability, the API was stress-tested using syntheti
 <details>
 <summary>Click to view locust results</summary>
 <br>
-<img src="assets/locust_result_check.gif" alt="Autofill GIF">
+<img src="assets/locust_result_check.gif" alt="locust results GIF">
 </details>
 
 <details>
 <summary>Click to view locust test results </summary>
 <br>
-<img src="assets/locust_test_results.gif" alt="Project demo GIF">
+<img src="assets/locust_test_results.png" alt="Test result">
 </details>
 
 ---
