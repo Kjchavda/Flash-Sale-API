@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.dependencies import rate_limiter
 from backend.database import get_db
 from backend.models import Order, OrderItem, OrderStatus, Ticket, TicketStatus, TicketTier
 from backend.schemas import LockRequest, LockResponse, OrderCreate, OrderRead
@@ -31,6 +32,7 @@ def _is_lock_expired(ticket: Ticket) -> bool:
     response_model=LockResponse,
     status_code=status.HTTP_200_OK,
     summary="Reserve an available ticket in a tier (10-min TTL)",
+    dependencies=[Depends(rate_limiter)]
 )
 async def lock_ticket(
     payload: LockRequest,

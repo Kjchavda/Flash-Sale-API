@@ -3,9 +3,12 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from backend.database import Base, engine
 from backend.routers import events, inventory, tiers, venues, purchase
+from backend.tasks import expired_locks
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -13,9 +16,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
  
+    # 2. Startup: Boot the background sweeper
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(expired_locks.reap_expired_locks, 'interval', minutes=1)
+    scheduler.start()
+    print("[system] Lock Reaper background task started.")
+
     yield 
     
-    # 2. Shutdown: Add any necessary cleanup here later (e.g., engine.dispose())
+    # 3. Shutdown: Gracefully stop the scheduler
+    scheduler.shutdown()
+    print("[system] Lock Reaper shut down gracefully.")
+
 
 app = FastAPI(
     title="Ticketing API",
