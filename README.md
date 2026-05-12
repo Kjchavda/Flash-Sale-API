@@ -153,6 +153,9 @@ uvicorn backend.main:app --reload
 
 ---
 
+# Database Schema
+![ER Diagram](assets/flash-sale-api.png)
+
 # 🔥 Core Features
 
 - Distributed ticket locking engine
