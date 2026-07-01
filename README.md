@@ -30,6 +30,10 @@ Developed a custom, distributed sliding-window rate limiter backed by Redis to i
 
 - FastAPI
 
+## Infrastructure
+
+- Docker
+
 ## Libraries
 
 - SQLAlchemy (Asyncio)
@@ -136,6 +140,26 @@ uvicorn backend.main:app --reload
 
 ---
 
+## Alternative: Run with Docker
+
+Skip the venv setup entirely — build and run the whole app in a container.
+
+**1. Set up your `.env` file** (same as above ,Docker reads the same variables)
+
+**2. Build and start the container**
+
+```bash
+docker compose up --build
+```
+
+**3. Open the API**
+
+Visit `http://localhost:8000/docs` for the Swagger UI.
+
+No local Python install needed. Postgres (Neon) and Redis (Upstash) are managed cloud services, so they aren't containerized; the app connects out to them the same way it does when run locally.
+
+---
+
 # 📂 Project Structure
 
 ```plaintext
@@ -147,6 +171,9 @@ uvicorn backend.main:app --reload
 │   ├── dependencies.py     # Redis rate limiter and DB session injectors
 │   ├── tasks.py            # APScheduler background workers
 │   └── routers/            # Modular API endpoints
+├── Dockerfile.api          # Container build definition for the API
+├── docker-compose.yml      # Local orchestration (single service)
+├── .dockerignore
 ├── locustfile.py           # Synthetic load testing scripts
 └── users.csv               # Seeded user data for robust testing
 ```
