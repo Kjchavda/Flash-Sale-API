@@ -5,7 +5,10 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from sqlalchemy import text
+
 from backend.database import Base, engine
+from backend.dependencies import redis_client
 from backend.routers import events, inventory, tiers, venues, purchase
 from backend.tasks import expired_locks
 
@@ -44,4 +47,23 @@ app.include_router(purchase.router)
 
 @app.get("/health", tags=["Meta"])
 async def health() -> dict:
-    return {"status": "ok"}
+    status = {"status": "ok", "database": "unknown", "redis": "unknown"}
+ 
+    # Check Postgres (Neon)
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        status["database"] = "ok"
+    except Exception as e:
+        status["database"] = f"error: {e}"
+        status["status"] = "error"
+ 
+    # Check Redis (Upstash)
+    try:
+        await redis_client.ping()
+        status["redis"] = "ok"
+    except Exception as e:
+        status["redis"] = f"error: {e}"
+        status["status"] = "error"
+ 
+    return status
