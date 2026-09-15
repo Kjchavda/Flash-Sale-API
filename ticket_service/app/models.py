@@ -5,7 +5,7 @@ from typing import Optional
 import uuid
 import enum
 from datetime import datetime
-from backend.database import Base 
+from ticket_service.app.database import Base 
 
 
 # ── Enums ────────────────────────────────────────────────────────────────────

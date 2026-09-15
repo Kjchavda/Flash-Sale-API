@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.database import get_db
-from backend.models import Event, Ticket, TicketStatus, TicketTier
-from backend.schemas import (
+from ticket_service.app.database import get_db
+from ticket_service.app.models import Event, Ticket, TicketStatus, TicketTier
+from ticket_service.app.schemas import (
     GenerateInventoryRequest,
     GenerateInventoryResponse,
     TierInventorySummary,

@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.database import get_db
-from backend.models import Event, Venue
-from backend.schemas import EventCreate, EventRead
+from ticket_service.app.database import get_db
+from ticket_service.app.models import Event, Venue
+from ticket_service.app.schemas import EventCreate, EventRead
 
 router = APIRouter(prefix="/events", tags=["Events"])
 

@@ -13,8 +13,8 @@ from datetime import datetime, timezone
 
 from sqlalchemy import update
 
-from backend.database import AsyncSessionLocal
-from backend.models import Ticket, TicketStatus
+from ticket_service.app.database import AsyncSessionLocal
+from ticket_service.app.models import Ticket, TicketStatus
 
 
 async def reap_expired_locks() -> int:

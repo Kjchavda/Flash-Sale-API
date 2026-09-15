@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.dependencies import rate_limiter
-from backend.database import get_db
-from backend.models import Order, OrderItem, OrderStatus, Ticket, TicketStatus, TicketTier
-from backend.schemas import LockRequest, LockResponse, OrderCreate, OrderRead
+from ticket_service.app.dependencies import rate_limiter
+from ticket_service.app.database import get_db
+from ticket_service.app.models import Order, OrderItem, OrderStatus, Ticket, TicketStatus, TicketTier
+from ticket_service.app.schemas import LockRequest, LockResponse, OrderCreate, OrderRead
 
 router = APIRouter(tags=["Purchase"])
 
