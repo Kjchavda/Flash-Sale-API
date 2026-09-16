@@ -5,7 +5,7 @@ from typing import Optional
 import uuid
 import enum
 from datetime import datetime
-from ticket_service.app.database import Base 
+from ticket_service.app.database import Base
 
 
 # ── Enums ────────────────────────────────────────────────────────────────────
@@ -22,19 +22,6 @@ class OrderStatus(enum.Enum):
 
 
 # ── Tables ───────────────────────────────────────────────────────────────────
-
-class User(Base):
-    __tablename__ = "users"
-
-    user_id       : Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email         : Mapped[str]       = mapped_column(String(255), unique=True, nullable=False)
-    password_hash : Mapped[str]       = mapped_column(String(255), nullable=False)
-    created_at    : Mapped[datetime]  = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-
-    # Relationships
-    orders         : Mapped[list["Order"]]  = relationship("Order", back_populates="user")
-    locked_tickets : Mapped[list["Ticket"]] = relationship("Ticket", back_populates="locked_by_user")
-
 
 class Venue(Base):
     __tablename__ = "venues"
@@ -82,13 +69,12 @@ class Ticket(Base):
 
     ticket_id    : Mapped[uuid.UUID]           = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tier_id      : Mapped[uuid.UUID]           = mapped_column(UUID(as_uuid=True), ForeignKey("ticket_tiers.tier_id"), nullable=False)
-    locked_by    : Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True)
+    locked_by    : Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
     status       : Mapped[TicketStatus]        = mapped_column(Enum(TicketStatus), nullable=False, default=TicketStatus.AVAILABLE)
     locked_until : Mapped[Optional[datetime]]  = mapped_column(DateTime, nullable=True)
 
     # Relationships
-    tier           : Mapped["TicketTier"]         = relationship("TicketTier", back_populates="tickets")
-    locked_by_user : Mapped[Optional["User"]]     = relationship("User", back_populates="locked_tickets")
+    tier           : Mapped["TicketTier"]          = relationship("TicketTier", back_populates="tickets")
     order_item     : Mapped[Optional["OrderItem"]] = relationship("OrderItem", back_populates="ticket", uselist=False)
 
 
@@ -96,14 +82,13 @@ class Order(Base):
     __tablename__ = "orders"
 
     order_id     : Mapped[uuid.UUID]   = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id      : Mapped[uuid.UUID]   = mapped_column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False)
+    user_id      : Mapped[uuid.UUID]   = mapped_column(UUID(as_uuid=True), nullable=False)
     total_amount : Mapped[float]       = mapped_column(Numeric(10, 2), nullable=False)
     status       : Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), nullable=False, default=OrderStatus.PENDING)
     created_at   : Mapped[datetime]    = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    user  : Mapped["User"]             = relationship("User", back_populates="orders")
-    items : Mapped[list["OrderItem"]]  = relationship("OrderItem", back_populates="order")
+    items : Mapped[list["OrderItem"]] = relationship("OrderItem", back_populates="order")
 
 
 class OrderItem(Base):

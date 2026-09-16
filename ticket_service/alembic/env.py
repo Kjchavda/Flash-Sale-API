@@ -4,8 +4,10 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 load_dotenv()
 
 # this is the Alembic Config object, which provides
@@ -13,7 +15,7 @@ load_dotenv()
 config = context.config
 db_url = os.getenv("DIRECT_DATABASE_URL")
 if not db_url:
-    raise ValueError("DIRECT_sDATABASE_URL is not set")
+    raise ValueError("DIRECT_DATABASE_URL is not set")
 
 config.set_main_option("sqlalchemy.url", db_url)
 
@@ -28,7 +30,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from ticket_service.app.database import Base
-from ticket_service.app.models import User, Venue, Event, TicketTier, Ticket, Order, OrderItem
+from ticket_service.app.models import Venue, Event, TicketTier, Ticket, Order, OrderItem
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

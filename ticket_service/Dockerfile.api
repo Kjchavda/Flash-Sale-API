@@ -7,9 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends build-essential
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ticket_service/app ./ticket_service/app
-COPY ticket_service/alembic ./ticket_service/alembic
-COPY ticket_service/alembic.ini ./ticket_service/alembic.ini
+COPY ticket_service ./ticket_service
 
 RUN useradd --create-home appuser
 USER appuser

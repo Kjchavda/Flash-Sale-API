@@ -3,11 +3,8 @@ from datetime import datetime
 from sqlalchemy import String, Boolean, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
+from app.database import Base
 
-try:
-    from app.database import Base
-except ImportError:
-    from .database import Base
 
 
 class User(Base):

@@ -3,8 +3,10 @@ import time
 import uuid
 from redis.asyncio import Redis, from_url
 from fastapi import HTTPException, Request, status
+from pathlib import Path
 from dotenv import load_dotenv
 
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 load_dotenv()
 
 redis_client: Redis = from_url(os.getenv("REDIS_URL"), decode_responses = True)

@@ -6,6 +6,8 @@ from sqlalchemy.orm import DeclarativeBase
 class Base(DeclarativeBase):
     pass
 
+from pathlib import Path
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")

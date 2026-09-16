@@ -6,7 +6,8 @@ from sqlalchemy.orm import DeclarativeBase
 class Base(DeclarativeBase):
     pass
 
-load_dotenv()
+from pathlib import Path
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # 1. Update URL: Ensure it starts with postgresql+asyncpg://
 DATABASE_URL = os.getenv("DATABASE_URL")

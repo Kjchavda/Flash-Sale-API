@@ -7,10 +7,9 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from sqlalchemy import text
 
-from ticket_service.app.routers import events, inventory, tiers, venues
+from ticket_service.app.routers import events, inventory, tiers, venues, purchase
 from ticket_service.app.database import Base, engine
 from ticket_service.app.dependencies import redis_client
-from ticket_service.app.routers import purchase
 from ticket_service.app.tasks import expired_locks
 
 

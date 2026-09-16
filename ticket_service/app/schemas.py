@@ -91,8 +91,7 @@ class GenerateInventoryResponse(BaseModel):
 # ── Lock ──────────────────────────────────────────────────────────────────────
  
 class LockRequest(BaseModel):
-    tier_id: uuid.UUID
-    user_id: uuid.UUID                        # replace with JWT sub in prod
+    tier_id: uuid.UUID 
  
  
 class LockResponse(_Base):
@@ -105,7 +104,6 @@ class LockResponse(_Base):
 # ── Order / purchase ──────────────────────────────────────────────────────────
  
 class OrderCreate(BaseModel):
-    user_id: uuid.UUID                        # replace with JWT sub in prod
     ticket_ids: list[uuid.UUID] = Field(..., min_length=1)
  
  

@@ -5,6 +5,8 @@ import bcrypt
 from jose import jwt, JWTError
 from dotenv import load_dotenv
 
+from pathlib import Path
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY", "flash-sale-secret-key-change-in-production")
