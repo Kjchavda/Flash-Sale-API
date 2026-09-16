@@ -63,6 +63,7 @@ async def health() -> dict:
  
     # Check Redis (Upstash)
     try:
+        # pyrefly: ignore [not-async]
         await redis_client.ping()
         status["redis"] = "ok"
     except Exception as e:
