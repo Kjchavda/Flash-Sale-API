@@ -1,5 +1,5 @@
 services:
-  ticket-service  :
+  ticket-service:
     build:
       context: .
       dockerfile: ticket_service/Dockerfile.api

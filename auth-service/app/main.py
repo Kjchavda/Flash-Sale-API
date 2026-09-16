@@ -7,9 +7,11 @@ from sqlalchemy import text
 try:
     from app.database import Base, engine
     from app.routers import auth
+    from app.middleware.logging_middleware import LoggingMiddleware
 except ImportError:
     from .database import Base, engine
     from .routers import auth
+    from .middleware.logging_middleware import LoggingMiddleware
 
 
 @asynccontextmanager
@@ -42,6 +44,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(LoggingMiddleware)
 
 # Include routers - mounted at /auth and at root for flexibility
 app.include_router(auth.router, prefix="/auth")

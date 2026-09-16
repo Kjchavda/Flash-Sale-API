@@ -11,6 +11,7 @@ from ticket_service.app.routers import events, inventory, tiers, venues, purchas
 from ticket_service.app.database import Base, engine
 from ticket_service.app.dependencies import redis_client
 from ticket_service.app.tasks import expired_locks
+from ticket_service.app.middleware.logging_middleware import LoggingMiddleware
 
 
 @asynccontextmanager
@@ -37,6 +38,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+app.add_middleware(LoggingMiddleware)
 
 app.include_router(venues.router)
 app.include_router(events.router)
