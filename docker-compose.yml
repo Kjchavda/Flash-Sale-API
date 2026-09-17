@@ -20,3 +20,12 @@ services:
     env_file:
       - ./auth-service/.env
     restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification_service/Dockerfile.notif
+    container_name: notification-service
+    ports:
+      - "8002:8002"
+    restart: unless-stopped

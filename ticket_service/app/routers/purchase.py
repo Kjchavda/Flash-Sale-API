@@ -1,7 +1,10 @@
+import logging
+import os
 import uuid
-
+from decimal import Decimal
 from datetime import datetime, timedelta, timezone
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from sqlalchemy import select
@@ -25,10 +28,13 @@ from ticket_service.app.schemas import (
 )
 from ticket_service.app.middleware.auth_middleware import CurrentUser, get_current_user
 
+logger = logging.getLogger("ticket_service.purchase")
+NOTIFICATION_SERVICE_URL = os.getenv("NOTIFICATION_SERVICE_URL", "http://localhost:8002") #  will be overridden by http://notification-service:8002 as docker uses service name instead of localhost
 
 router = APIRouter(tags=["Purchase"])
 
 LOCK_TTL_MINUTES = 10
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -48,6 +54,43 @@ def _is_lock_expired(ticket: Ticket) -> bool:
         ticket.locked_until is not None
         and ticket.locked_until < _now()
     )
+
+
+async def _notify_booking_confirmed(
+    order: Order,
+    ticket_ids: list[uuid.UUID],
+    user_email: str | None = None,
+) -> None:
+    """
+    Call notification service endpoint to dispatch booking confirmation notification.
+    Errors are logged to avoid failing already-committed transactions.
+    """
+    notif_url = f"{NOTIFICATION_SERVICE_URL.rstrip('/')}/booking-confirmation"
+    payload = {
+        "order_id": str(order.order_id),
+        "user_id": str(order.user_id),
+        "user_email": user_email,
+        "ticket_ids": [str(t_id) for t_id in ticket_ids],
+        "total_amount": str(order.total_amount) if order.total_amount is not None else None,
+        "timestamp": order.created_at.isoformat() if order.created_at else None,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            response = await client.post(notif_url, json=payload)
+            if response.status_code >= 400:
+                logger.warning(
+                    f"Notification service returned status {response.status_code} for order {order.order_id}: {response.text}"
+                )
+            else:
+                logger.info(
+                    f"Booking confirmation notification triggered for order {order.order_id}"
+                )
+    except Exception as exc:
+        logger.error(
+            f"Failed to reach notification service for order {order.order_id}: {exc}"
+        )
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -319,7 +362,18 @@ async def create_order(
 
     await db.refresh(order_result, ["items"])
 
+    # -------------------------------------------------------------------------
+    # 9. Trigger booking confirmation notification
+    # -------------------------------------------------------------------------
+
+    await _notify_booking_confirmed(
+        order=order_result,
+        ticket_ids=payload.ticket_ids,
+        user_email=current_user.email,
+    )
+
     return OrderRead.model_validate(order_result)
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
