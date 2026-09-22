@@ -14,6 +14,9 @@ from ticket_service.app.tasks import expired_locks
 from ticket_service.app.middleware.logging_middleware import LoggingMiddleware
 
 
+from ticket_service.app.kafka_producer import start_kafka_producer, stop_kafka_producer
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     # 1. Startup: Initialize database tables
@@ -26,9 +29,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     scheduler.start()
     print("[system] Lock Reaper background task started.")
 
+    # 3. Startup: Start Kafka Producer
+    await start_kafka_producer()
+
     yield 
     
-    # 3. Shutdown: Gracefully stop the scheduler
+    # 4. Shutdown: Gracefully stop the Kafka Producer
+    await stop_kafka_producer()
+
+    # 5. Shutdown: Gracefully stop the scheduler
     scheduler.shutdown()
     print("[system] Lock Reaper shut down gracefully.")
 

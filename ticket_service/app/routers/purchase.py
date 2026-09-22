@@ -4,7 +4,6 @@ import uuid
 from decimal import Decimal
 from datetime import datetime, timedelta, timezone
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from sqlalchemy import select
@@ -27,9 +26,9 @@ from ticket_service.app.schemas import (
     OrderRead,
 )
 from ticket_service.app.middleware.auth_middleware import CurrentUser, get_current_user
+from ticket_service.app.kafka_producer import publish_booking_confirmation
 
 logger = logging.getLogger("ticket_service.purchase")
-NOTIFICATION_SERVICE_URL = os.getenv("NOTIFICATION_SERVICE_URL", "http://localhost:8002") #  will be overridden by http://notification-service:8002 as docker uses service name instead of localhost
 
 router = APIRouter(tags=["Purchase"])
 
@@ -62,33 +61,31 @@ async def _notify_booking_confirmed(
     user_email: str | None = None,
 ) -> None:
     """
-    Call notification service endpoint to dispatch booking confirmation notification.
+    Produce a booking confirmation event to Kafka.
     Errors are logged to avoid failing already-committed transactions.
     """
-    notif_url = f"{NOTIFICATION_SERVICE_URL.rstrip('/')}/booking-confirmation"
     payload = {
         "order_id": str(order.order_id),
         "user_id": str(order.user_id),
         "user_email": user_email,
         "ticket_ids": [str(t_id) for t_id in ticket_ids],
-        "total_amount": str(order.total_amount) if order.total_amount is not None else None,
+        "total_amount": float(order.total_amount) if order.total_amount is not None else None,
         "timestamp": order.created_at.isoformat() if order.created_at else None,
     }
 
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            response = await client.post(notif_url, json=payload)
-            if response.status_code >= 400:
-                logger.warning(
-                    f"Notification service returned status {response.status_code} for order {order.order_id}: {response.text}"
-                )
-            else:
-                logger.info(
-                    f"Booking confirmation notification triggered for order {order.order_id}"
-                )
+        success = await publish_booking_confirmation(payload)
+        if success:
+            logger.info(
+                f"Booking confirmation event published to Kafka for order {order.order_id}"
+            )
+        else:
+            logger.warning(
+                f"Failed to publish booking confirmation event to Kafka for order {order.order_id}"
+            )
     except Exception as exc:
         logger.error(
-            f"Failed to reach notification service for order {order.order_id}: {exc}"
+            f"Unexpected error publishing booking confirmation event for order {order.order_id}: {exc}"
         )
 
 

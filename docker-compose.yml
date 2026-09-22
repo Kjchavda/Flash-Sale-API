@@ -1,4 +1,5 @@
 services:
+
   ticket-service:
     build:
       context: .
@@ -8,6 +9,10 @@ services:
       - "8000:8000"
     env_file:
       - ./ticket_service/.env
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
     restart: unless-stopped
 
   auth-service:
@@ -28,4 +33,50 @@ services:
     container_name: notification-service
     ports:
       - "8002:8002"
-    restart: unless-stopped
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    restart: unless-stopped
+
+    environment:
+      # KRaft
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+
+      # KRaft controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+
+      # Kafka listeners
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093
+
+      # Address given to clients
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+
+      # Listener protocols
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      # Controller configuration
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # Broker-to-broker communication
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # Single broker
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      # Required for single-node Kafka
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+      # Allow single-node cluster to start
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0

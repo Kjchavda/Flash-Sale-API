@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from fastapi import FastAPI
@@ -6,15 +7,28 @@ from fastapi.middleware.cors import CORSMiddleware
 try:
     from app.routers import notify
     from app.middleware.logging_middleware import LoggingMiddleware
+    from app.consumer import consume_booking_confirmations
 except ImportError:
     from .routers import notify
     from .middleware.logging_middleware import LoggingMiddleware
+    from .consumer import consume_booking_confirmations
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
-    print("[system] Notification service started.")
+    print("[system] Notification service starting...")
+    # Start Kafka consumer background task
+    consumer_task = asyncio.create_task(consume_booking_confirmations())
+    print("[system] Notification service Kafka consumer started.")
+    
     yield
+
+    print("[system] Notification service shutting down...")
+    consumer_task.cancel()
+    try:
+        await consumer_task
+    except asyncio.CancelledError:
+        pass
     print("[system] Notification service shut down gracefully.")
 
 
