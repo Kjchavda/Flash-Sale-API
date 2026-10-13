@@ -61,7 +61,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ubuntu/flash-sale-api
+            cd /home/ubuntu/Flash-Sale-API
             git pull origin main
             docker compose down
             docker compose up -d --build
