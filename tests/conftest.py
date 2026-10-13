@@ -3,34 +3,63 @@ import os
 import sys
 import uuid
 from pathlib import Path
-import pytest
+
 from dotenv import load_dotenv
-from jose import jwt
-from fastapi.testclient import TestClient
 
-from ticket_service.app.main import app
-from ticket_service.app.database import Base, get_db, engine as app_engine
-from ticket_service.app.models import Venue, Event, TicketTier, Ticket, Order, OrderItem
-from ticket_service.app.middleware.auth_middleware import CurrentUser, get_current_user
-
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-
-# 1. Load test environment variables
-test_env_path = Path(__file__).resolve().parent.parent / ".env.test"
-load_dotenv(test_env_path, override=False)
-os.environ.setdefault("SECRET_KEY", "test-secret-key-for-flash-sale-tests-1234567890")
-
-# 2. Configure sys.path so ticket_service and root can be imported cleanly
+# 1. Load test environment variables BEFORE importing the app
 root_dir = Path(__file__).resolve().parent.parent
+test_env_path = root_dir / ".env.test"
+
+load_dotenv(test_env_path, override=False)
+
+# Ensure SECRET_KEY is non-empty
+if not os.getenv("SECRET_KEY"):
+    os.environ["SECRET_KEY"] = (
+        "test-secret-key-for-flash-sale-tests-1234567890"
+    )
+
+# Configure sys.path before importing application modules
 ticket_service_dir = root_dir / "ticket_service"
+
 for p in [str(root_dir), str(ticket_service_dir)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-# Alias ticket_service.app to 'app' if not already in sys.modules
+# Alias ticket_service.app to 'app' if needed
 import ticket_service.app as ts_app
+
 if "app" not in sys.modules:
     sys.modules["app"] = ts_app
+
+# Now import pytest and application modules
+import pytest
+from jose import jwt
+from fastapi.testclient import TestClient
+
+from ticket_service.app.main import app
+from ticket_service.app.database import Base, get_db
+from ticket_service.app.middleware.auth_middleware import (
+    SECRET_KEY,
+    ALGORITHM,
+    get_current_user,
+)
+
+from sqlalchemy.ext.asyncio import (
+    create_async_engine,
+    async_sessionmaker,
+    AsyncSession,
+)
+from sqlalchemy.pool import NullPool
+
+from ticket_service.app.models import (
+    Venue,
+    Event,
+    TicketTier,
+    Ticket,
+    Order,
+    OrderItem,
+)
+from contextlib import asynccontextmanager
 
 # 3. Configure Database Engine for Testing (AsyncPG)
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/flashsale_test")
