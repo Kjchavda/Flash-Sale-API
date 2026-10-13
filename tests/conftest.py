@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 # 1. Load test environment variables
 test_env_path = Path(__file__).resolve().parent.parent / ".env.test"
-load_dotenv(test_env_path, override=True)
+load_dotenv(test_env_path, override=False)
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-flash-sale-tests-1234567890")
 
 # 2. Configure sys.path so ticket_service and root can be imported cleanly
