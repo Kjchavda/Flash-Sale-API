@@ -13,11 +13,15 @@ load_dotenv()
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-db_url = os.getenv("DIRECT_DATABASE_URL")
+db_url = os.getenv("DIRECT_DATABASE_URL") or os.getenv("DATABASE_URL")
 if not db_url:
-    raise ValueError("DIRECT_DATABASE_URL is not set")
+    raise ValueError("DIRECT_DATABASE_URL or DATABASE_URL must be set")
+
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 config.set_main_option("sqlalchemy.url", db_url)
+
 
 
 # Interpret the config file for Python logging.
@@ -73,11 +77,17 @@ def do_run_migrations(connection):
 
 
 async def run_migrations_online():
+    target_url = config.get_main_option("sqlalchemy.url")
+    connect_args = {}
+    if "neon.tech" in target_url or "sslmode=require" in target_url:
+        connect_args = {"ssl": True}
+
     connectable = create_async_engine(
-        config.get_main_option("sqlalchemy.url"),
+        target_url,
         poolclass=pool.NullPool,
-        connect_args={"ssl": True},
-)
+        connect_args=connect_args,
+    )
+
 
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
