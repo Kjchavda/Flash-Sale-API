@@ -1,6 +1,6 @@
 # Flash Sale API: Event-Driven Ticketing Microservices
 
-[![Live Deployment](https://img.shields.io/badge/Live_on-AWS_EC2-success?style=for-the-badge&logo=amazonaws)](http://YOUR-EC2-PUBLIC-IP-OR-DOMAIN/tickets/docs)
+[![Live Deployment](https://img.shields.io/badge/Live_on-AWS_EC2-success?style=for-the-badge&logo=amazonaws)](http://16.192.251.11/tickets/docs)
 [![Watch Demo](https://img.shields.io/badge/Demo-View_GIF_Below-blue?style=for-the-badge)](#-gallery)
 
 <!-- TODO: replace YOUR-EC2-PUBLIC-IP-OR-DOMAIN in the badge above with your real EC2 public IP / domain. -->
@@ -18,9 +18,8 @@ The full stack is deployed and running on **AWS EC2** using Docker Compose, with
 - **Self-contained messaging:** Kafka runs on the instance in KRaft mode with a persistent `kafka_data` volume.
 - **Restart resilience:** every container uses `restart: unless-stopped`, so the stack recovers after a reboot or crash.
 
-Live API docs: `http://YOUR-EC2-PUBLIC-IP-OR-DOMAIN/tickets/docs`
+Live API docs: `http://16.192.251.11/tickets/docs`
 
-<!-- VERIFY: add the EC2 instance type, whether HTTPS/a domain/Elastic IP is configured, and the security-group rules if you want them documented. -->
 
 ### Deploying to EC2
 
@@ -55,12 +54,9 @@ An **Nginx** reverse proxy is the single public entry point (port 80). It routes
 ## Event-Driven Communication
 `ticket-service` publishes booking events through a Kafka producer (`kafka_producer.py`), and `notification-service` consumes them in a dedicated consumer (`consumer.py`). The broker is a single-node Apache Kafka in **KRaft mode** (no ZooKeeper) using `aiokafka`. Services wait for the broker's health check before starting, keeping notification work off the request path.
 
-<!-- VERIFY: list the Kafka topic names and event payloads. -->
-
 ## Authentication & Security
 Authentication lives in a dedicated service using **JWT** tokens (`python-jose`) with **bcrypt** password hashing (`passlib`); token and password helpers are in `auth_utils.py`.
 
-<!-- VERIFY: describe how ticket-service validates the JWT (shared secret in dependencies.py?). -->
 
 ## Concurrency & Data Integrity
 Implemented mathematical deadlock prevention and row-level `FOR UPDATE SKIP LOCKED` logic in PostgreSQL to safely handle concurrent ticket locking without double-booking inventory.
@@ -69,17 +65,14 @@ Implemented mathematical deadlock prevention and row-level `FOR UPDATE SKIP LOCK
 Built an asynchronous background worker using APScheduler (`ticket_service/app/tasks/`) to continuously sweep the database and release orphaned ticket locks (10-minute TTL) from abandoned checkout sessions, maximizing inventory utilization.
 
 ## Edge Security & Anti-Bot
-A distributed, Redis-backed **sliding-window rate limiter**, implemented as FastAPI middleware, throttles malicious bot traffic and mitigates DDoS attempts at the application edge. Limits are shared across instances because counters live in Redis, and the behaviour is covered by automated tests (`tests/test_rate_limit.py`).
+A distributed, Redis-backed **sliding-window rate limiter**, implemented as a FastAPI dependency in the ticket service (`ticket_service/app/dependencies.py`), throttles malicious bot traffic and mitigates DDoS attempts at the application edge. Limits are shared across instances because counters live in Redis, and the behaviour is covered by tests (`tests/test_rate_limit.py`).
 
-<!-- VERIFY: state the actual limits (requests/window), which services/endpoints are covered, and whether it is the custom limiter, SlowAPI, or both. -->
 
 ## Testing & Observability
 - **Automated tests** with `pytest` and `pytest-asyncio` in `tests/`, covering bookings (`test_bookings.py`), notifications (`test_notif.py`), and rate limiting (`test_rate_limit.py`).
 - **Load testing** with Locust (`ticket_service/app/locustfile.py`) simulating flash-sale traffic spikes.
-- **Sentry** (`sentry-sdk`) for error tracking.
 - **CI** workflows under `.github/`.
 
-<!-- VERIFY: confirm Sentry is initialised, and describe what the .github workflow runs. -->
 
 ---
 
@@ -143,7 +136,6 @@ Then open `http://localhost:8089`, set the number of users and spawn rate, and s
 - Connection pooling kept active database connections within the strict limits of the serverless provider.
 - The rate limiter throttles abusive clients while legitimate traffic continues to be served.
 
-<!-- VERIFY: re-run the test after rewriting the locustfile and rate limiter, then update the figures above and the gallery assets. Adjust the endpoint path if it changes. -->
 
 ## 📸 Gallery
 
@@ -199,7 +191,6 @@ REDIS_URL=rediss://default:pass@endpoint.upstash.io:6379
 # Database connection and JWT signing settings for the auth service
 ```
 
-<!-- VERIFY: fill in exact variable names for both .env files (DB URLs, JWT secret/algorithm/expiry, Sentry DSN). The notification service reads no .env file in docker-compose.yml. -->
 
 `KAFKA_BOOTSTRAP_SERVERS` is injected by Docker Compose (`kafka:9092`) for the ticket and notification services.
 
@@ -229,8 +220,6 @@ Everything is served through the gateway on port 80:
 | `http://localhost/tickets/docs` | Ticket service Swagger UI |
 | `http://localhost/notifications/docs` | Notification service Swagger UI |
 
-<!-- VERIFY: the Swagger pages behind a path-stripping proxy may fail to load /openapi.json unless root_path is configured. Check these URLs work. -->
-
 Postgres (Neon) and Redis (Upstash) are managed cloud services, so they aren't containerized. Kafka runs in the compose stack with a persistent `kafka_data` volume.
 
 ## Running the Tests
@@ -249,8 +238,6 @@ pytest
 ```
 
 Test settings live in `pytest.ini` and `.env.test`.
-
-<!-- VERIFY: there is also a second docker-compose file (docker-compose.t...). If it is a test stack, document how to run it here. -->
 
 ---
 
@@ -276,11 +263,11 @@ Test settings live in `pytest.ini` and `.env.test`.
 ├── ticket_service/
 │   ├── alembic/                  # Ticket DB migrations
 │   ├── app/
-│   │   ├── middleware/           # Redis sliding-window rate limiter
+│   │   ├── middleware/
 │   │   ├── routers/              # Ticket and booking endpoints
 │   │   ├── tasks/                # APScheduler lock-reaper
 │   │   ├── database.py
-│   │   ├── dependencies.py
+│   │   ├── dependencies.py       # Redis rate limiter and DB session injectors
 │   │   ├── kafka_producer.py     # Publishes booking events
 │   │   ├── locustfile.py         # Load testing scenarios
 │   │   ├── main.py
@@ -326,7 +313,7 @@ Test settings live in `pytest.ini` and `.env.test`.
 - Distributed ticket locking engine
 - PostgreSQL row-level locking
 - `FOR UPDATE SKIP LOCKED` concurrency control
-- Redis-backed sliding-window rate limiter (middleware)
+- Redis-backed sliding-window rate limiter (FastAPI dependency)
 - Background lock expiration & cleanup
 - PgBouncer transaction pooling
 - Async FastAPI architecture
